@@ -54,8 +54,7 @@ else
 fi
 
 echo "Updating the .gitignore"
-touch .gitignore
-cat .gitignore > notes/.gitignore
+echo ".last_update" > notes/.gitignore
 touch notes/.last_update
 
 echo "Running the downloader script:"
