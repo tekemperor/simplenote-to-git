@@ -5,36 +5,39 @@ import sys
 username = sys.argv[1]
 password = sys.argv[2]
 
-
 simplenote = Simplenote(username, password)
 
-noteresponse = simplenote.get_note_list()
-last_update_file = open('notes/.last_update', 'r')
+# Retrieve timestamp from .last_update
+last_update = Decimal('0')
 try:
-    last_update = Decimal(last_update_file.read())
-except Exception as e:
-    last_update = Decimal('0')
-last_update_file.close()
-most_recently_updated = '0'
+    with open('notes/.last_update', 'r') as last_update_file:
+        last_update = Decimal(last_update_file.read())
+except IOError:
+    pass
 
+# Get note list (with content)
+noteresponse = simplenote.get_note_list()
 notes = noteresponse[0]
+
+# Write notes to files
 print("Checking %d notes..." % len(notes))
+most_recently_updated = last_update
 for note in notes:
-    if (Decimal(note['modifydate']) > last_update):
-        print('    Reading contents of %s' % note['key'])
-        note_data = simplenote.get_note(note['key'])
+    if (Decimal(note['modificationDate']) > last_update):
         print('    Writing contents of %s' % note['key'])
         filename = 'notes/%s' % note['key']
-        f = open(filename, 'w')
-        f.write(note_data[0]['content'])
-        f.close()
+        with open(filename, 'w') as f:
+            f.write(note['content'])
     else:
-        print('Skipped %s, no changes.' % note['key'])
-    if (Decimal(note['modifydate']) > Decimal(most_recently_updated)):
-        most_recently_updated = note['modifydate']
+        print('    Skipped %s, no changes.' % note['key'])
+    if (Decimal(note['modificationDate']) > most_recently_updated):
+        most_recently_updated = Decimal(note['modificationDate'])
 
-last_update_file = open('notes/.last_update', 'w')
-last_update_file.write(str(most_recently_updated))
-last_update_file.close()
+# Update .last_update timestamp
+try:
+    with open('notes/.last_update', 'w') as last_update_file:
+        last_update_file.write(str(most_recently_updated))
+except IOError:
+    pass
 
 print('Download of notes complete.')
